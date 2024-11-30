@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: . # El Dockerfile debe estar en el mismo nivel que este archivo
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - ./apache.conf:/etc/apache2/sites-available/000-default.conf
+    ports:
+      - "8080:80"
+    networks:
+      - laravel_network
+    environment:
+      APACHE_DOCUMENT_ROOT: /var/www/html/public
+
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root    # Contraseña del usuario root
+      MYSQL_DATABASE: laravel      # Nombre de la base de datos
+      MYSQL_USER: laravel_user     # Nombre de un usuario regular (opcional)
+      MYSQL_PASSWORD: laravel_pass # Contraseña del usuario regular (opcional)
+    networks:
+      - laravel_network
+
+  redis:
+    image: redis:alpine
+    container_name: laravel_redis
+    networks:
+      - laravel_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8081:80" # Acceso a phpMyAdmin en localhost:8081
+    environment:
+      PMA_HOST: mysql              # Nombre del servicio MySQL
+      MYSQL_ROOT_PASSWORD: root    # Contraseña del usuario root
+    depends_on:
+      - mysql
+    networks:
+      - laravel_network
+
+networks:
+  laravel_network:
+    driver: bridge
