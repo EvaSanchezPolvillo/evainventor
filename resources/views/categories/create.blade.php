@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@section('css')
+    <link rel="stylesheet" href="{{ asset('css/form.css') }}">
+@endsection
+
 @section('content')
     <div  class="my-5">
         <form action="{{ route('categories.store') }}" method="POST">

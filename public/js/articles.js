@@ -1,100 +1,119 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const articleForm = document.getElementById('articleForm');
-
-    articleForm.addEventListener('submit', function (e) {
-        e.preventDefault(); // Prevenir el envío tradicional del formulario
-
-        // Crear un objeto FormData para enviar los datos
-        const formData = new FormData(articleForm);
-
-        // Enviar la solicitud AJAX
-        fetch(storeArticleUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            },
-        })
-            .then(async (response) => {
-                if (response.ok) {
-                    return response.json();
-                } else if (response.status === 422) {
-                    const data = await response.json();
-                    throw { validationErrors: data.errors };
-                } else {
-                    throw new Error('Error inesperado en el servidor.');
-                }
-            })
-            .then(() => {
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: 'El artículo se ha creado correctamente.',
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                });
-
-                // Limpiar el formulario
-                articleForm.reset();
-            })
-            .catch((error) => {
-                if (error.validationErrors) {
-                    document.querySelectorAll('.text-danger').forEach((el) => (el.textContent = ''));
-
-                    for (const field in error.validationErrors) {
-                        const errorElement = document.getElementById(`${field}Error`);
-                        if (errorElement) {
-                            errorElement.textContent = error.validationErrors[field][0];
-                        }
-                    }
-                } else {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Hubo un problema al procesar tu solicitud.',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar',
-                    });
-                }
-            });
+$(document).ready(function () {
+    $('#articlesTable').DataTable({
+        responsive: true, // Hace la tabla responsiva
+        language: {
+            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" // Traducción al español
+        },
     });
 });
 
 
+document.addEventListener("DOMContentLoaded", function () {
+    const table = document.getElementById("articlesTable");
 
-document.addEventListener('DOMContentLoaded', function () {
-    const categorySelect = document.getElementById('categoria');
-    const subcategorySelect = document.getElementById('subcategoria');
+    table.addEventListener("click", function (event) {
+        if (event.target.closest(".btn-delete")) {
+            const row = event.target.closest("tr"); // Obtén la fila del botón clicado
+            const articuloId = row.querySelector("td").innerText.trim(); // Toma el valor de la primera celda (ID)
 
-    categorySelect.addEventListener('change', function () {
-        const categoryId = this.value;
+            if (!confirm("¿Estás seguro de que deseas eliminar este artículo?")) {
+                return;
+            }
 
-        // Limpia las opciones previas
-        subcategorySelect.innerHTML = '<option selected>Selecciona primero una categoría</option>';
-        subcategorySelect.disabled = true;
-
-        if (categoryId) {
-            // Realiza la solicitud AJAX para obtener las subcategorías
-            fetch(`/categories/${categoryId}/subcategories`)
-                .then(response => response.json())
+            // Realizar la solicitud DELETE
+            fetch(`/articulos/delete/${articuloId}`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Error al eliminar el artículo.");
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.length > 0) {
-                        subcategorySelect.disabled = false; // Habilitar el select de subcategorías
-                        subcategorySelect.innerHTML = '<option value="">Selecciona una subcategoría</option>';
-
-                        // Añadir las subcategorías al select
-                        data.forEach(subcategory => {
-                            const option = document.createElement('option');
-                            option.value = subcategory.id;
-                            option.textContent = subcategory.name;
-                            subcategorySelect.appendChild(option);
-                        });
+                    if (data.success) {
+                        alert("Artículo eliminado con éxito.");
+                        row.remove(); // Elimina la fila de la tabla
                     } else {
-                        subcategorySelect.innerHTML = '<option selected>No hay subcategorías disponibles</option>';
+                        alert("Hubo un problema al eliminar el artículo.");
                     }
                 })
                 .catch(error => {
-                    console.error('Error al cargar las subcategorías:', error);
+                    console.error("Error:", error);
+                    alert("Ocurrió un error al eliminar el artículo.");
                 });
         }
     });
 });
+document.addEventListener("DOMContentLoaded", function () {
+    const table = document.getElementById("articlesTable");
 
+    table.addEventListener("dblclick", function (event) {
+        const cell = event.target.closest("td"); // Detectar la celda donde ocurrió el doble clic
+        if (!cell) return;
+
+        const row = cell.closest("tr"); // Obtener la fila asociada
+        const articuloId = row.children[0].innerText.trim(); // Asumimos que la primera celda contiene el ID
+        const column = table.querySelector(`thead th:nth-child(${cell.cellIndex + 1})`)?.getAttribute("data-column");
+        const originalValue = cell.innerText.trim();
+
+        if (!column || column === "subcategory" || column === "imagen") return; // Ignorar columnas no editables
+
+        // Crear un campo de entrada para la edición
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = originalValue;
+        input.classList.add("form-control");
+        cell.innerHTML = ""; // Limpiar la celda
+        cell.appendChild(input);
+        input.focus();
+
+        // Guardar cambios al perder el foco
+        input.addEventListener("blur", function () {
+            const newValue = input.value.trim();
+
+            if (newValue === originalValue) {
+                cell.innerText = originalValue; // Restaurar si no hubo cambios
+                return;
+            }
+
+            // Enviar la actualización al servidor
+            fetch(`/articulos/${articuloId}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                },
+                body: JSON.stringify({
+                    column: column,
+                    value: newValue,
+                }),
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Error al actualizar el artículo");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        cell.innerText = newValue; // Actualizar la celda
+                    } else {
+                        cell.innerText = originalValue; // Restaurar si hubo error
+                        alert("Error al actualizar el artículo.");
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    cell.innerText = originalValue; // Restaurar si ocurrió un error
+                    alert("Ocurrió un error al actualizar el artículo.");
+                });
+        });
+
+        // Guardar cambios al presionar Enter
+        input.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") input.blur();
+        });
+    });
+});

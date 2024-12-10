@@ -40,7 +40,7 @@ Route::group(['prefix' => 'articulos'], function(){
     Route::get('/', [\App\Http\Controllers\Articles\ArticleController::class, 'index'])->name('articles.index');
     Route::get('/crearArticulo', [\App\Http\Controllers\Articles\ArticleController::class, 'create'])->name('articles.create');
     Route::post('/articulo', [\App\Http\Controllers\Articles\ArticleController::class, 'store'])->name('articles.store');
-    Route::put('/articulos/{id}', [\App\Http\Controllers\Articles\ArticleController::class, 'update'])->name('articles.update');
+    Route::put('/{id}', [\App\Http\Controllers\Articles\ArticleController::class, 'update'])->name('articles.update');
     Route::delete('/delete/{articulo}', [\App\Http\Controllers\Articles\ArticleController::class, 'destroy'])->name('articles.destroy');
 });
 
@@ -62,10 +62,13 @@ Route::group(['prefix' => 'subcategorias'], function(){
     Route::delete('/delete/{subcategoria}', [\App\Http\Controllers\Subcategories\SubcategoryController::class, 'destroy'])->name('subcategories.destroy');
 });
 
-Route::group(['prefix' => 'pedidos'], function(){
+Route::group(['prefix' => 'pedidos'], function () {
     Route::get('/', [\App\Http\Controllers\Orders\OrderController::class, 'index'])->name('orders.index');
     Route::get('/catalogo', [\App\Http\Controllers\Orders\OrderController::class, 'create'])->name('orders.create');
+    Route::get('/{id}', [\App\Http\Controllers\Orders\OrderController::class, 'show'])->name('orders.show'); // Ruta para consultar detalles
+    Route::delete('/{id}', [\App\Http\Controllers\Orders\OrderController::class, 'destroy'])->name('orders.destroy');
 });
+
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -76,3 +79,5 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 //});
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+

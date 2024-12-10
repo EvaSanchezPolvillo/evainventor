@@ -31,26 +31,26 @@ class ArticleController extends Controller
     }
     public function store(Request $request)
     {
-
         try {
             $rules = [
                 'nombreArticulo' => 'required|string|min:3|max:255',
-                'subcategoria' => 'required',
-                'imagen' => 'required|image',//|max:2048' Validación de imagen (requerida y con tamaño máximo)
-                'stock'=>'required|integer',
+                'subcategoria' => 'required|exists:subcategories,id',
+                'imagen' => 'required|image|max:2048', // Validar la imagen
+                'stock' => 'required|integer|min:0',
             ];
-
+    
             $validator = Validator::make($request->all(), $rules);
+    
             if ($validator->fails()) {
                 return redirect()->back()
                     ->withErrors($validator)
                     ->withInput();
             }
-
+    
             // Subir y almacenar la imagen
-            $imagePath = $request->file('imagen')->store('articles','public');
-            // El método store() guarda la imagen en la carpeta 'articles' dentro de la carpeta 'public'
-
+            $imagePath = $request->file('imagen')->store('articles', 'public');
+    
+            // Crear y guardar el artículo
             $article = new Article();
             $article->name = $request->input('nombreArticulo');
             $article->stock = $request->input('stock');
@@ -58,12 +58,16 @@ class ArticleController extends Controller
             $article->available = boolval($request->input('available'));
             $article->visible = boolval($request->input('visible'));
             $article->status = $request->input('estado');
-            $article->image = $imagePath; // Guardar la ruta de la imagen en la base de datos
+            $article->image = $imagePath; // Guardar la ruta de la imagen
             $article->saveOrFail();
+    
             return redirect()->route('articles.index');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());}
+            \Log::error($e->getMessage());
+            return back()->with('error', $e->getMessage());
+        }
     }
+    
 
     public function update(Request $request, $id)
     {

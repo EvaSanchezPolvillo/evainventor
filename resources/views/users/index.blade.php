@@ -1,6 +1,5 @@
 @extends('layouts.app')
 
-
 @section('content')
     <div class="row">
         <div class="col-lg-12 margin-tb">
@@ -50,7 +49,7 @@
                         @endcan
                         @can('user-delete')
                     {!! Form::open(['method' => 'DELETE','route' => ['users.destroy', $user->id],'style'=>'display:inline']) !!}
-                    {!! Form::submit('Borrar', ['class' => 'btn btn-danger']) !!}
+                    {!! Form::submit('Borrar', ['class' => 'btn btn-danger boton-usuarios']) !!}
                     {!! Form::close() !!}
                         @endcan
                 </td>

@@ -1,0 +1,26 @@
+/* General Styles */
+body {
+    background-color: #F9F9F9; /* Fondo claro profesional */
+    font-family: 'Nunito', sans-serif;
+    color: #000000; /* Texto negro */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header y Footer */
+header, footer {
+    background-color: #4A90E2; /* Azul suave */
+    padding: 10px 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-top: 3px solid #3A78C3; /* Línea decorativa */
+}
+
+footer {
+    text-align: center;
+    margin-top: auto;
+    color: white;
+    font-size: 0.9rem;
+}
